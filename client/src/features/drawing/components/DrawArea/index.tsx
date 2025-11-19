@@ -3,32 +3,14 @@ import { getCoordinatesRelativeToElement } from "../../utils/getCanvasCoordinate
 import { useMyUserStore } from "../../../user/store/useMyUserStore";
 import styles from './DrawArea.module.css';
 import { SocketManager } from "../../../../shared/services/SocketManager";
-
-/**
- * EN SAVOIR PLUS : 
- * DPR : https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
- * ResizeObserver : https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
- */
+import type { DrawStroke, Point } from "../../../../shared/types/drawing.type";
 
 export function DrawArea() {
-  /**
-   * ===================
-   * ETATS & REFS (toujours les définir en haut du composant)
-   * ===================
-   * 
-  */
-   
-  /**
-   * Rappel : Les modifications de state impliquent un re-render alors que les ref ne provoquent AUCUN re-render (c'est pour ça qu'on ne les ajoute pas dans les dépendances d'un hook par exemple)
-   * 
-  */ 
 
-  /**
-   * On utilise des refs ici, car on ne veut surtout pas provoquer de re-render à chaque fois qu'on a une modification de tracé
-   * Ici, on va donc pouvoir stocker les informations dont on a besoin, sans provoquer aucun re-rendu
-  */
   const canvasRef = useRef<HTMLCanvasElement>(null); /** Les updates sur ces constantes ne provoqueront pas re-render */
   const parentRef = useRef<HTMLDivElement>(null); /** Les updates sur ces constantes ne provoqueront pas re-render */
+
+  const otherUserStrokes = useRef<Map<string, Point[]>>(new Map());
 
   const { myUser } = useMyUserStore();
   const canUserDraw = useMemo(() => myUser !== null, [myUser]); 
@@ -79,7 +61,6 @@ export function DrawArea() {
    * ===================
    */
 
-
   const onMouseMove = useCallback((e: MouseEvent) => {
 
     if (!canvasRef.current) {
@@ -101,10 +82,7 @@ export function DrawArea() {
 
   }, [drawLine, getCanvasCoordinates]);
 
-
-
-  const onMouseUp = useCallback((e: MouseEvent) => {
-    console.log('onMouseUp', e);
+  const onMouseUp = useCallback(() => {
 
     SocketManager.emit('draw:end');
 
@@ -136,6 +114,42 @@ export function DrawArea() {
     canvasRef.current?.addEventListener('mousemove', onMouseMove);
     canvasRef.current?.addEventListener('mouseup', onMouseUp);
   }, [canUserDraw, onMouseMove, onMouseUp, drawLine]);
+
+  /**
+   * ===================
+   * GESTION DES DESSINS DES AUTRES UTILISATEURS
+   * ===================
+   */
+
+  const drawOtherUserPoints = useCallback((socketId: string, points : Point[]) => {
+    const previousPoints = otherUserStrokes.current.get(socketId) || [];
+
+    /** On dessine à partir du dernier point connu */
+    points.forEach((point, index) => {
+      const to=point;
+      const from = index === 0 ? point : points[index - 1];
+
+      if ( previousPoints[index]){
+        return;
+      }
+
+      drawLine(from, to);
+    });
+  }, []);
+  
+  const onOtherUserDrawStart = useCallback((payload : DrawStroke) => {
+    drawOtherUserPoints(payload.socketId, payload.points);
+
+    otherUserStrokes.current.set(payload.socketId, payload.points);
+  }, [drawOtherUserPoints]);
+
+  const onOtherUserDrawMove = useCallback((payload : DrawStroke) => {
+    drawOtherUserPoints(payload.socketId, payload.points);
+  }, [drawOtherUserPoints]);
+
+  const onOtherUserDrawEnd = useCallback((payload : DrawStroke) => {
+    otherUserStrokes.current.delete(payload.socketId);
+  }, []);
 
   /**
    * ===================
@@ -203,24 +217,16 @@ export function DrawArea() {
   }, [setCanvasDimensions]);
 
   useEffect(() => {
-    SocketManager.listen('draw:start', (payload) => {
-      console.log('draw:start', payload);
-    });
-
-    SocketManager.listen('draw:move', (payload) => {
-      console.log('draw:move', payload);
-    });
-
-    SocketManager.listen('draw:end', () => {
-      console.log('draw:end');
-    });
+    SocketManager.listen('draw:start', onOtherUserDrawStart);
+    SocketManager.listen('draw:move', onOtherUserDrawMove);
+    SocketManager.listen('draw:end', onOtherUserDrawEnd);
 
     return () => {
       SocketManager.off('draw:start');
       SocketManager.off('draw:move');
       SocketManager.off('draw:end');
     };
-  }, []);
+  }, [onOtherUserDrawStart, onOtherUserDrawMove, onOtherUserDrawEnd]);
 
   return (
     <div className={[styles.drawArea, 'w-full', 'h-full', 'overflow-hidden', 'flex', 'items-center'].join(' ')} ref={parentRef}>

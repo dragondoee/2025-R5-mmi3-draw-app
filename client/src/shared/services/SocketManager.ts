@@ -24,7 +24,7 @@ export type SocketServerToClientEvents = {
   'users:updated': (payload: { users: User[] }) => void;
   'draw:start': (payload: DrawStroke) => void; 
   'draw:move': (payload: DrawStroke) => void; 
-  'draw:end':() => void; 
+  'draw:end':(payload: DrawStroke) => void; 
 }
 
 export type GetEndpoints = {
@@ -82,7 +82,7 @@ class _SocketManager {
     eventName: K, 
     ...args: Parameters<SocketClientToServerEvents[K]>
   ): void {
-    console.log('EMIT', { eventName, args, socketManger: this.socketManager });
+    // console.log('EMIT', { eventName, args, socketManger: this.socketManager });
     if (!this.socketManager) {
       console.warn(`Cannot emit ${String(eventName)}: Socket not connected`);
       return;

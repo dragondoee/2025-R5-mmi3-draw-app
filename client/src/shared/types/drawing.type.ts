@@ -12,7 +12,7 @@ export type Point = {
 }
 
 export type DrawStroke = {
-    socketId: number;
+    socketId: string;
     points: Point[];
     strokeWidth: number;
     color: string;
