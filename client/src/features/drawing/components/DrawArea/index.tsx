@@ -228,6 +228,17 @@ export function DrawArea() {
     };
   }, [onOtherUserDrawStart, onOtherUserDrawMove, onOtherUserDrawEnd]);
 
+  useEffect(() => {
+    SocketManager.get('strokes').then((data) => {
+      if (!data || !data.strokes){
+        return;
+      }
+      data.strokes.forEach((stroke) => {
+        drawOtherUserPoints(stroke.socketId, stroke.points);
+      });
+    });
+  }, [drawOtherUserPoints]);
+
   return (
     <div className={[styles.drawArea, 'w-full', 'h-full', 'overflow-hidden', 'flex', 'items-center'].join(' ')} ref={parentRef}>
       <canvas className={[styles.drawArea__canvas, 'border-1'].join(' ')} onMouseDown={onMouseDown} ref={canvasRef}

@@ -29,7 +29,7 @@ export type SocketServerToClientEvents = {
 
 export type GetEndpoints = {
   'users': {users: User[]};
-  'strokes': {strokes: unknown[]} // todo: ajouter les types pour les traits de dessin
+  'strokes': {strokes: DrawStroke[]}
 }
 
 class _SocketManager {
