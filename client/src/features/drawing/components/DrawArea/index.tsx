@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { getCoordinatesRelativeToElement } from "../../utils/getCanvasCoordinates";
 import { useMyUserStore } from "../../../user/store/useMyUserStore";
 import styles from './DrawArea.module.css';
+import { SocketManager } from "../../../../shared/services/SocketManager";
 
 /**
  * EN SAVOIR PLUS : 
@@ -39,28 +40,76 @@ export function DrawArea() {
    */
 
   /** Pour récupérer les coordonnées d'un event en prenant en compte le placement de notre canvas */
-  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | MouseEvent) => {
     return getCoordinatesRelativeToElement(e.clientX, e.clientY, canvasRef.current);
   } 
 
   /**
    * Conseil @todo: 
-   * Faîtes une fontion qui va venir dessiner en fonction de coordonées que vous passez
+   * Faîtes une fonction qui va venir dessiner en fonction de coordonées que vous passez
    */
+  const drawLine = useCallback((
+    from: { x: number, y: number } | null,
+    to: { x: number, y: number }
+  ) => {
+    if (!canvasRef.current) {
+      return;
+    }
+
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+    
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+    if (from) {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+    }
+    ctx.lineTo(to.x, to.y);
+
+    ctx.stroke();
+  }, []);
+
 
   /**
    * ===================
    * GESTION DES EVENEMENTS MOUSE
    * ===================
    */
-  
+
+
   const onMouseMove = useCallback((e: MouseEvent) => {
-    console.log('onMouseMove', e);
-  }, []);
+
+    if (!canvasRef.current) {
+      return;
+    }
+
+    const coordinates = getCanvasCoordinates(e);
+    drawLine(
+    null,  
+    {
+      x: coordinates.x,
+      y: coordinates.y,
+    });
+
+    SocketManager.emit('draw:move', {
+      x: coordinates.x,
+      y: coordinates.y
+    });
+
+  }, [drawLine, getCanvasCoordinates]);
+
+
 
   const onMouseUp = useCallback((e: MouseEvent) => {
     console.log('onMouseUp', e);
-  }, []);
+
+    SocketManager.emit('draw:end');
+
+    canvasRef.current?.removeEventListener('mousemove', onMouseMove);
+  }, [onMouseMove]);
 
   const onMouseDown: React.MouseEventHandler<HTMLCanvasElement> = useCallback((e) => {
     /** On empêche à l'utilisateur de dessiner tant qu'il n'a pas rejoint le serveur  */
@@ -75,22 +124,18 @@ export function DrawArea() {
 
     /** Transformation des coordoonées mouse (relatives à la page) vers des coordonnées relative au canvas  */
     const coordinates = getCanvasCoordinates(e);
+    drawLine(coordinates, coordinates);
 
-    /** Ressource: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API */
-    /** On commence par un "beginPath" pour débuter le tracé */
-    ctx.beginPath();
+    SocketManager.emit('draw:start', {
+      x: coordinates.x,
+      y: coordinates.y,
+      strokeWidth: 3,
+      color: 'black'
+    });
 
-    /** Dans ce 1er exemple (on changera par la suite), j'affiche des points là où je fais un mousedown, donc j'ai choisi d'utiliser la méthode arc : https://developer.mozilla.org/fr/docs/Web/API/CanvasRenderingContext2D/arc */
-    ctx.arc(coordinates.x, coordinates.y, 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    /**
-    * On pourrait ajouter le onMouseMove, onMouseUp directement dans le JSX de notre canvas, mais les ajouter à la volée ici est plus flexible. On pourra retirer ces events onMouseUp
-    * Cela évite aussi les re-render inutile
-    */
     canvasRef.current?.addEventListener('mousemove', onMouseMove);
     canvasRef.current?.addEventListener('mouseup', onMouseUp);
-  }, [canUserDraw, onMouseMove, onMouseUp]);
+  }, [canUserDraw, onMouseMove, onMouseUp, drawLine]);
 
   /**
    * ===================
@@ -156,6 +201,26 @@ export function DrawArea() {
     };
 
   }, [setCanvasDimensions]);
+
+  useEffect(() => {
+    SocketManager.listen('draw:start', (payload) => {
+      console.log('draw:start', payload);
+    });
+
+    SocketManager.listen('draw:move', (payload) => {
+      console.log('draw:move', payload);
+    });
+
+    SocketManager.listen('draw:end', () => {
+      console.log('draw:end');
+    });
+
+    return () => {
+      SocketManager.off('draw:start');
+      SocketManager.off('draw:move');
+      SocketManager.off('draw:end');
+    };
+  }, []);
 
   return (
     <div className={[styles.drawArea, 'w-full', 'h-full', 'overflow-hidden', 'flex', 'items-center'].join(' ')} ref={parentRef}>
