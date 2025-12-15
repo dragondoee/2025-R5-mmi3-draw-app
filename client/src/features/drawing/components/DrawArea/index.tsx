@@ -26,10 +26,6 @@ export function DrawArea() {
     return getCoordinatesRelativeToElement(e.clientX, e.clientY, canvasRef.current);
   } 
 
-  /**
-   * Conseil @todo: 
-   * Faîtes une fonction qui va venir dessiner en fonction de coordonées que vous passez
-   */
   const drawLine = useCallback((
     from: { x: number, y: number } | null,
     to: { x: number, y: number }
@@ -151,15 +147,24 @@ export function DrawArea() {
     otherUserStrokes.current.delete(payload.socketId);
   }, []);
 
+  const getAllStrokes = useCallback(() => {
+    SocketManager.get('strokes').then((data) => {
+      if (!data || !data.strokes){
+        return;
+      }
+      data.strokes.forEach((stroke) => {
+        drawOtherUserPoints(stroke.socketId, stroke.points);
+      });
+    });
+  }, [drawOtherUserPoints]);
+
   /**
    * ===================
    * GESTION DES DPR
    * ===================
    */
 
-  /**
-   * setCanvasDimensions : Configure les dimensions du canvas avec DPR
-   */
+
   const setCanvasDimensions = useCallback(() => {
     if (!canvasRef.current || !parentRef.current) return;
 
@@ -194,27 +199,19 @@ export function DrawArea() {
 
 
   useEffect(() => {
-    /**
-     * On souhaite redimensionner le canvas et recharger les strokes au resize
-     */
     const resizeObserver = new ResizeObserver(() => {
       setCanvasDimensions();
+      getAllStrokes();
     });
     
-    /** On observe les changements de taille sur l'élément parent */
     if (parentRef.current) {
       resizeObserver.observe(parentRef.current);
     }
-
-    /** 
-     * Rappel : Il s'agit d'une fonction de cleanup (dans le useEffect le cleanup est optionnel). A chaque fois qu'un re-rendu est effectué, le cleanup est d'abord effectué avant de re ré-effectuer le useEffect classique. Elle est également appelée lorsque le component est removed du DOM. 
-     */
     return () => {
-      /** On veut disconnect pour éviter d'avoir plusieurs resizeObservers ou d'avoir un resizeObserver sur un élément qui n'existe plus  */
       resizeObserver.disconnect();
     };
 
-  }, [setCanvasDimensions]);
+  }, [setCanvasDimensions, getAllStrokes]);
 
   useEffect(() => {
     SocketManager.listen('draw:start', onOtherUserDrawStart);
@@ -229,15 +226,8 @@ export function DrawArea() {
   }, [onOtherUserDrawStart, onOtherUserDrawMove, onOtherUserDrawEnd]);
 
   useEffect(() => {
-    SocketManager.get('strokes').then((data) => {
-      if (!data || !data.strokes){
-        return;
-      }
-      data.strokes.forEach((stroke) => {
-        drawOtherUserPoints(stroke.socketId, stroke.points);
-      });
-    });
-  }, [drawOtherUserPoints]);
+    getAllStrokes();
+  }, [getAllStrokes]);
 
   return (
     <div className={[styles.drawArea, 'w-full', 'h-full', 'overflow-hidden', 'flex', 'items-center'].join(' ')} ref={parentRef}>
