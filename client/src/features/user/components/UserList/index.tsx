@@ -1,3 +1,5 @@
+import { UserAvatar } from '../UserAvatar';
+
 export type UserListProps = {
   users: {
     id: string;
@@ -16,7 +18,7 @@ export function UserList({ users }: UserListProps){
         {users.length > 0 ? 
           users.map((user) => (
             <li className="list-row items-center" key={user.id}>
-              <div><img className="size-8 rounded-box" src={user.avatar} /></div>
+              <UserAvatar username={user.username} avatar={user.avatar} />
               <div>
                 <div className="text-xs uppercase font-semibold">{user.username}</div>
               </div>
