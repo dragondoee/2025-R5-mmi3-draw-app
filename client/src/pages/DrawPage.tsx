@@ -10,7 +10,7 @@ import { useJoinMyUser } from '../features/user/hooks/useJoinMyUser'
 
 function DrawPage() {
   const { joinMyUser }  = useJoinMyUser();
-  const { userList } = useUpdatedUserList();
+  const { userList, userDrawingList } = useUpdatedUserList(); // récupère les liste des utilisateurs et ceux qui dessinent
 
   return (
     <DrawLayout
@@ -22,7 +22,10 @@ function DrawPage() {
           {/* <Instructions>
             {getInstructions('user-list')}
           </Instructions> */}
-          <UserList users={userList} />
+          <UserList users={userList.map(
+            user => (
+              { ...user, isDrawing: userDrawingList.get(user.id) ?? false } // Ajoute la propriété isDrawing à chaque utilisateur en fonction de la Map userDrawingList
+              ))} />
         </>
       }
       bottomArea={

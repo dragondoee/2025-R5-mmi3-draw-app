@@ -8,6 +8,7 @@ import { SocketManager } from "../../../shared/services/SocketManager";
 
 export function useUpdatedUserList() {
   const { setUserList, userList } = useUserListStore();
+  const { setUserDrawingList, userDrawingList } = useUserListStore();
   
   useEffect(() => {
     SocketManager.listen("users:updated", (data) => {
@@ -18,6 +19,27 @@ export function useUpdatedUserList() {
       SocketManager.off("users:updated");
     } 
   }, [setUserList]);
+
+  // Mettre à jour la liste des utilisateurs qui dessinent ou non
+  useEffect(() => {
+    SocketManager.listen("draw:start", (data) => {
+      setUserDrawingList(new Map(userDrawingList).set(data.userId, true));
+    });
+    
+    return () => {
+      SocketManager.off("draw:start");
+    } 
+  }, [setUserDrawingList, userDrawingList]);
+
+  useEffect(() => {
+    SocketManager.listen("draw:end", (data) => {
+      setUserDrawingList(new Map(userDrawingList).set(data.userId, false));
+    });
+    
+    return () => {
+      SocketManager.off("draw:end");
+    } 
+  }, [setUserDrawingList, userDrawingList]);
     
   useEffect(() => {
     SocketManager.get('users').then((data) => {
@@ -25,6 +47,6 @@ export function useUpdatedUserList() {
     });
   }, [setUserList]);
     
-  return { userList };
+  return { userList, userDrawingList };
 }
   
