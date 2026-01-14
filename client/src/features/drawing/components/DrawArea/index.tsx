@@ -106,8 +106,7 @@ export function DrawArea() {
   * GESTION DES EVENEMENTS MOUSE
   * ===================
   */
-  
-  
+
   const onMouseMove = useCallback((e: MouseEvent) => {
     if (!canvasRef.current) {
       return;
@@ -264,8 +263,7 @@ export function DrawArea() {
     * GESTION DU RESIZE
     * ===================
     */
-    
-    
+
     useEffect(() => {
       /**
       * On souhaite redimensionner le canvas et recharger les strokes au resize
@@ -289,6 +287,12 @@ export function DrawArea() {
       };
       
     }, [setCanvasDimensions, getAllStrokes]);
+
+    /**
+    * ===================
+    * LISTENERS SOCKET
+    * ===================
+    */
     
     useEffect(() => {
       SocketManager.listen('draw:start', onOtherUserDrawStart)

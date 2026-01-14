@@ -10,3 +10,11 @@
   width: var(--width);
   height: var(--height);
 }
+
+.toolbar {
+  padding:  16px 24px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
