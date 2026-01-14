@@ -1,6 +1,10 @@
 import styles from './DrawToolbar.module.css';
 
-export function DrawToolbar() {
+type DrawToolbarProps = {
+  download: () => void;
+}
+
+export function DrawToolbar({ download }: DrawToolbarProps) {
   return (
     <div className={styles.toolbar}>
       {/* Choix des couleurs statique - non fonctionnel */}
@@ -25,6 +29,10 @@ export function DrawToolbar() {
         <div className='flex gap-2'>
           <input type="range" min="1" max="100"/>
         </div>
+      </div>
+      {/* Bouton export image PNG */}
+      <div>
+        <button className='btn bg-base-100 p-2 rounded-md shadow-md' onClick={download}>Exporter</button>
       </div>
     </div>
   )

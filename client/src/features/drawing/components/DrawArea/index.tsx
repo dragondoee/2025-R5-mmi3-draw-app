@@ -12,8 +12,11 @@ import { relativeToAbsoluteCoordinates } from "../../utils/relativeToAbsoluteCoo
 * DPR : https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 * ResizeObserver : https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
 */
+type DrawAreaProps = {
+  setCanvas: (canvas: HTMLCanvasElement) => void;
+}
 
-export function DrawArea() {
+export function DrawArea({ setCanvas }: DrawAreaProps) {
   /**
   * ===================
   * ETATS & REFS (toujours les définir en haut du composant)
@@ -32,6 +35,8 @@ export function DrawArea() {
   */
   const canvasRef = useRef<HTMLCanvasElement>(null); /** Les updates sur ces constantes ne provoqueront pas re-render */
   const parentRef = useRef<HTMLDivElement>(null); /** Les updates sur ces constantes ne provoqueront pas re-render */
+
+  setCanvas(canvasRef.current!);
   
   const otherUserStrokes = useRef<Map<string, Point[]>>(new Map());
   

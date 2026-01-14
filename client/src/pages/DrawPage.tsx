@@ -6,10 +6,23 @@ import { DrawArea } from '../features/drawing/components/DrawArea'
 import { DrawToolbar } from '../features/drawing/components/DrawToolbar'
 import { useUpdatedUserList } from '../features/user/hooks/useUpdatedUserList'
 import { useJoinMyUser } from '../features/user/hooks/useJoinMyUser'
+import { useCallback, useState } from 'react'
 
 function DrawPage() {
   const { joinMyUser }  = useJoinMyUser();
   const { userList, userDrawingList } = useUpdatedUserList(); // récupère les liste des utilisateurs et ceux qui dessinent
+  const [canvas, setCanvas]= useState<HTMLCanvasElement | null>(null) ;
+
+  const download = useCallback(() => {
+    if (!canvas){
+      return;
+    }
+    let url = canvas.toDataURL("image/png");
+    let link = document.createElement('a');
+    link.download = 'canvas.png';
+    link.href = url;
+    link.click();
+  }, [canvas]);
 
   return (
     <DrawLayout
@@ -26,11 +39,11 @@ function DrawPage() {
       }
       bottomArea={
         <>
-          <DrawToolbar />
+          <DrawToolbar download={download} />
         </>
       }
     >
-      <DrawArea />
+      <DrawArea setCanvas={setCanvas} />
     </DrawLayout>
   )
 }
