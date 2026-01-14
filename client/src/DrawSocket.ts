@@ -1,19 +1,29 @@
 import { io, type Socket } from 'socket.io-client';
-import { useSocketStore } from '../store/useSocketStore';
-import type { User } from '../types/user.type';
-import type { Drawpoint, DrawStroke, Point } from '../types/drawing.type';
+import { useDrawingStore } from './store/useDrawingStore';
 
 /* This class is a singleton, it exports a single instance */
 const VITE_SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_SERVER_URL;
+
+// Types pour les joueurs
+export type User = {
+  id: string;
+  socketId: string;
+  username: string;
+  avatar: string;
+  hasJoined: boolean;
+}
+
+export type Users = User[];
+// @todo: ajouter les types pour les traits de dessin
 
 // Événements envoyés par le client vers le serveur
 export type SocketClientToServerEvents = {
   'myUser:join': (player: Omit<User, 'id' | 'socketId' | 'hasJoined'>) => void;
   'myUser:leave': (userId: string) => void;
   'myUser:edit': (userId: string, updates: Partial<User>) => void;
-  'draw:start': (data: Drawpoint) => void; /* @todo */
-  'draw:move': (data: Point) => void; /* @todo */
-  'draw:end': () => void; /* @todo */
+  'draw:start': (data: unknown) => void; /* @todo */
+  'draw:move': (data: unknown) => void; /* @todo */
+  'draw:end': (data: unknown) => void; /* @todo */
 }
 
 // Événements reçus du serveur vers le client
@@ -21,18 +31,21 @@ export type SocketServerToClientEvents = {
   'myUser:joined': (payload: { user: User }) => void;
   'user:left': (payload: { user: User }) => void;
   'myUser:edited': (payload: { user: User }) => void;
-  'users:updated': (payload: { users: User[] }) => void;
-  'draw:start': (payload: DrawStroke) => void; 
-  'draw:move': (payload: DrawStroke) => void; 
-  'draw:end':(payload: DrawStroke) => void; 
+  'users:updated': (payload: { users: Users }) => void;
+  'server:draw:start': (payload: unknown) => void; 
+// @todo: ajouter les types pour les traits de dessin
+  'server:draw:move': (payload: unknown) => void; 
+// @todo: ajouter les types pour les traits de dessin
+  'server:draw:end':(payload: unknown) => void; 
+// @todo: ajouter les types pour les traits de dessin
 }
 
 export type GetEndpoints = {
-  'users': { users: User[] };
-  'strokes': { strokes: DrawStroke[] }
+  'users': {users: Users};
+  'strokes': {strokes: unknown[]} // @todo: ajouter les types pour les traits de dessin
 }
 
-class _SocketManager {
+class DrawSocketManager {
   private socketManager: Socket | null;
 
   constructor() {
@@ -47,20 +60,20 @@ class _SocketManager {
       console.log(`%c SocketProvider: Connected to Socket ${VITE_SOCKET_SERVER_URL} with ID ${socketManagerInstance?.id}`, 'color: green');
       this.socketManager = socketManagerInstance;
 
-      useSocketStore.setState({ isConnectedToServer: true });
+      useDrawingStore.setState({ isConnectedToServer: true });
     }); 
 
     socketManagerInstance.on("connect_error", (error) => {
       console.error('SocketProvider: Connection Error', {error});
 
-      useSocketStore.setState({ isConnectedToServer: false });
+      useDrawingStore.setState({ isConnectedToServer: false });
     });
 
     socketManagerInstance.on("disconnect", (reason) => {
       console.error('SocketProvider: DisConnectedToServer', {reason});
       this.socketManager = null;
 
-      useSocketStore.setState({ isConnectedToServer: false });
+      useDrawingStore.setState({ isConnectedToServer: false });
     });
   }
 
@@ -82,7 +95,7 @@ class _SocketManager {
     eventName: K, 
     ...args: Parameters<SocketClientToServerEvents[K]>
   ): void {
-    // console.log('EMIT', { eventName, args, socketManger: this.socketManager });
+    console.log('EMIT', { eventName, args, socketManger: this.socketManager });
     if (!this.socketManager) {
       console.warn(`Cannot emit ${String(eventName)}: Socket not connected`);
       return;
@@ -126,7 +139,7 @@ class _SocketManager {
   async get<K extends keyof GetEndpoints>(
     endpoint: K
   ): Promise<GetEndpoints[K] | undefined> {
-    const payload = await fetch(`${VITE_SOCKET_SERVER_URL}/api/${endpoint}/get`, { method: 'GET' });
+    const payload = await fetch (`${VITE_SOCKET_SERVER_URL}/api/${endpoint}/get`, { method: 'GET' });
     if (payload.ok) {
       const data = await payload.json();
       return data;
@@ -134,4 +147,4 @@ class _SocketManager {
   }
 }
 
-export const SocketManager = new _SocketManager();
+export const DrawSocket = new DrawSocketManager();
