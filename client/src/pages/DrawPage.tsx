@@ -19,9 +19,6 @@ function DrawPage() {
       />}
       rightArea={
         <>
-          {/* <Instructions>
-            {getInstructions('user-list')}
-          </Instructions> */}
           <UserList users={userList.map(
             user => (
               { ...user, isDrawing: userDrawingList.get(user.id) ?? false } // Ajoute la propriété isDrawing à chaque utilisateur en fonction de la Map userDrawingList
@@ -37,10 +34,6 @@ function DrawPage() {
       }
     >
       <DrawArea />
-      {/* <TestDrawArea /> */}
-      {/* <Instructions className="max-w-xs">
-        {getInstructions('draw-area')}
-      </Instructions> */}
       
     </DrawLayout>
   )
