@@ -57,6 +57,14 @@ export function DrawArea() {
    * ===================
    */
 
+  const relativeCoordinates = ( coordinates :{x: number, y: number}) => {
+    if (!canvasRef.current) return {x: 0, y:0};
+
+    return {
+      x : coordinates.x / canvasRef.current.width, 
+      y: coordinates.y / canvasRef.current.height};
+  }
+
   const onMouseMove = useCallback((e: MouseEvent) => {
 
     if (!canvasRef.current) {
@@ -100,9 +108,11 @@ export function DrawArea() {
     const coordinates = getCanvasCoordinates(e);
     drawLine(coordinates, coordinates);
 
+    let relativeCoor = relativeCoordinates(coordinates);
+
     SocketManager.emit('draw:start', {
-      x: coordinates.x,
-      y: coordinates.y,
+      x: relativeCoor.x,
+      y: relativeCoor.y,
       strokeWidth: 3,
       color: 'black'
     });
