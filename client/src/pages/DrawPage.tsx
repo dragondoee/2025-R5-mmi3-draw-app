@@ -35,12 +35,13 @@ function DrawPage() {
     >
       <DrawArea />
       {/* <TestDrawArea /> */}
-      {/*<Instructions className="max-w-xs">
+      {/* <Instructions className="max-w-xs">
         {getInstructions('draw-area')}
-      </Instructions>*/}
+      </Instructions> */}
       
     </DrawLayout>
   )
 }
 
 export default DrawPage;
+

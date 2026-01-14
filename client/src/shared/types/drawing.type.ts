@@ -1,19 +1,18 @@
-
-export type DrawPoint = {
-    x: number;
-    y: number;
-    strokeWidth: number;
-    color: string;
+export type Drawpoint = {
+  x: number,
+  y: number,
+  strokeWidth: number;
+  color: string;
 }
 
 export type Point = {
-    x : number;
-    y : number;
+  x: number,
+  y: number;
 }
 
 export type DrawStroke = {
-    socketId: string;
-    points: Point[];
-    strokeWidth: number;
-    color: string;
+  userId: string,
+  points: Point[],
+  strokeWidth: number,
+  color: string
 }

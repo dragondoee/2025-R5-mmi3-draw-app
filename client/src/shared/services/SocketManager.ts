@@ -1,7 +1,7 @@
 import { io, type Socket } from 'socket.io-client';
 import { useSocketStore } from '../store/useSocketStore';
 import type { User } from '../types/user.type';
-import type { DrawPoint, Point, DrawStroke } from '../types/drawing.type';
+import type { Drawpoint, DrawStroke, Point } from '../types/drawing.type';
 
 /* This class is a singleton, it exports a single instance */
 const VITE_SOCKET_SERVER_URL = import.meta.env.VITE_SOCKET_SERVER_URL;
@@ -11,9 +11,9 @@ export type SocketClientToServerEvents = {
   'myUser:join': (player: Omit<User, 'id' | 'socketId' | 'hasJoined'>) => void;
   'myUser:leave': (userId: string) => void;
   'myUser:edit': (userId: string, updates: Partial<User>) => void;
-  'draw:start': (data: DrawPoint) => void;
-  'draw:move': (data: Point) => void;
-  'draw:end': () => void;
+  'draw:start': (data: Drawpoint) => void; /* @todo */
+  'draw:move': (data: Point) => void; /* @todo */
+  'draw:end': () => void; /* @todo */
 }
 
 // Événements reçus du serveur vers le client
@@ -28,8 +28,8 @@ export type SocketServerToClientEvents = {
 }
 
 export type GetEndpoints = {
-  'users': {users: User[]};
-  'strokes': {strokes: DrawStroke[]}
+  'users': { users: User[] };
+  'strokes': { strokes: DrawStroke[] }
 }
 
 class _SocketManager {
